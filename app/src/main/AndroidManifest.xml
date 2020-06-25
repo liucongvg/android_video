@@ -4,12 +4,15 @@
 
     <application
         android:allowBackup="true"
+        android:debuggable="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".DecodeActivity">
+<!--        <activity android:name=".DecodeActivity">-->
+<!--        <activity android:name=".VideoActivity">-->
+        <activity android:name=".SoundPoolActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
