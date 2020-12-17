@@ -1,9 +1,12 @@
 package com.liucong.video;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import android.app.Activity;
+import android.content.res.AssetFileDescriptor;
+import android.content.res.AssetManager;
 import android.graphics.Rect;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -19,9 +22,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
-    private static final String SAMPLE = "/sdcard" + "/video.mp4";
+    //private static final String SAMPLE = "/sdcard" + "/video.mp4";
     private VideoThread mVideoThread = null;
     private AudioThread mAudioThread = null;
+    private static final String TAG = "DecodeActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +75,17 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
 
         @Override
         public void run() {
+            AssetFileDescriptor dataSource = null;
+            try {
+                AssetManager assetManager = getAssets();
+                dataSource = assetManager.openFd("mumu.mp4");
+            } catch (Exception e) {
+                Log.e(TAG, "run: " + e.getMessage(), new Throwable());
+            }
             extractor = new MediaExtractor();
             try {
-                extractor.setDataSource(SAMPLE);
+                //extractor.setDataSource(SAMPLE);
+                extractor.setDataSource(dataSource.getFileDescriptor(), dataSource.getStartOffset(), dataSource.getLength());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -97,7 +109,7 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
             }
 
             if (videoDecoder == null) {
-                Log.e("DecodeActivity", "Can't find video info!");
+                Log.e(TAG, "Can't find video info!");
                 return;
             }
 
@@ -119,11 +131,11 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
                             // We shouldn't stop the playback at this point, just pass the EOS
                             // flag to decoder, we will get it again from the
                             // dequeueOutputBuffer
-                            Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                            Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                             videoDecoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             isEOS = true;
                         } else {
-                            Log.d("DecodeActivity", "InputBuffer queueInputBuffer");
+                            //Log.d(TAG, "InputBuffer queueInputBuffer");
                             videoDecoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
                             extractor.advance();
                         }
@@ -133,18 +145,18 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
                 int outIndex = videoDecoder.dequeueOutputBuffer(info, 10000);
                 switch (outIndex) {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
+                        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                         outputBuffers = videoDecoder.getOutputBuffers();
                         break;
                     case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        Log.d("DecodeActivity", "New format " + videoDecoder.getOutputFormat());
+                        Log.d(TAG, "New format " + videoDecoder.getOutputFormat());
                         break;
                     case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
+                        Log.d(TAG, "dequeueOutputBuffer timed out!");
                         break;
                     default:
                         ByteBuffer buffer = outputBuffers[outIndex];
-                        //Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + buffer);
+                        //Log.v(TAG, "We can't use this buffer but render it due to the API limit, " + buffer);
 
                         // We use a very simple clock to keep the video FPS, or the video
                         // playback will be too fast
@@ -163,7 +175,7 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
 
                 // All decoded frames have been rendered, we can stop playing now
                 if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                     break;
                 }
             }
@@ -171,6 +183,11 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
             videoDecoder.stop();
             videoDecoder.release();
             extractor.release();
+            try {
+                dataSource.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -183,9 +200,17 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
 
         @Override
         public void run() {
+            AssetFileDescriptor dataSource = null;
+            try {
+                AssetManager assetManager = getAssets();
+                dataSource = assetManager.openFd("mumu.mp4");
+            } catch (Exception e) {
+                Log.e(TAG, "run: " + e.getMessage(), new Throwable());
+            }
             extractor = new MediaExtractor();
             try {
-                extractor.setDataSource(SAMPLE);
+                //extractor.setDataSource(SAMPLE);
+                extractor.setDataSource(dataSource.getFileDescriptor(), dataSource.getStartOffset(), dataSource.getLength());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -208,7 +233,7 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
             }
 
             if (audioDecoder == null) {
-                Log.e("DecodeActivity", "Can't find audio info!");
+                Log.e(TAG, "Can't find audio info!");
                 return;
             }
 
@@ -235,11 +260,11 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
                             // We shouldn't stop the playback at this point, just pass the EOS
                             // flag to decoder, we will get it again from the
                             // dequeueOutputBuffer
-                            Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                            Log.d(TAG, "InputBuffer BUFFER_FLAG_END_OF_STREAM");
                             audioDecoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             isEOS = true;
                         } else {
-                            Log.d("DecodeActivity", "InputBuffer queueInputBuffer");
+                            Log.d(TAG, "InputBuffer queueInputBuffer");
                             audioDecoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
                             extractor.advance();
                         }
@@ -249,28 +274,30 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
                 int outIndex = audioDecoder.dequeueOutputBuffer(info, 10000);
                 switch (outIndex) {
                     case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
+                        Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                         outputBuffers = audioDecoder.getOutputBuffers();
                         break;
                     case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        Log.d("DecodeActivity", "New format " + audioDecoder.getOutputFormat());
+                        Log.d(TAG, "New format " + audioDecoder.getOutputFormat());
                         break;
                     case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
+                        Log.d(TAG, "dequeueOutputBuffer timed out!");
                         break;
                     default:
                         ByteBuffer buffer = outputBuffers[outIndex];
                         final byte[] chunk = new byte[info.size];
                         buffer.get(chunk);
                         buffer.clear();
+                        //Log.d(TAG, "audioTrack.write start");
                         audioTrack.write(chunk, info.offset, info.offset + info.size);
+                        //Log.d(TAG, "audioTrack.write end");
                         audioDecoder.releaseOutputBuffer(outIndex, false);
                         break;
                 }
 
                 // All decoded frames have been rendered, we can stop playing now
                 if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    Log.d(TAG, "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
                     break;
                 }
             }
@@ -278,6 +305,11 @@ public class DecodeActivity extends Activity implements SurfaceHolder.Callback {
             audioDecoder.stop();
             audioDecoder.release();
             extractor.release();
+            try {
+                dataSource.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

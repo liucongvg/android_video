@@ -20,7 +20,7 @@ public class SoundPoolActivity extends Activity {
     }
 
     public void play(View view) {
-        Log.d("SoundPool", "play...");
+        Log.d(TAG, "play...");
         new Thread(new Runnable() {
             @Override
             public void run() {
